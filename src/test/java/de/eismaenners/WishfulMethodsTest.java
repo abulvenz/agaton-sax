@@ -20,9 +20,9 @@ import static org.junit.Assert.*;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class WishfulTest_methods {
+public class WishfulMethodsTest {
 
-    public WishfulTest_methods() {
+    public WishfulMethodsTest() {
     }
 
     @BeforeClass
