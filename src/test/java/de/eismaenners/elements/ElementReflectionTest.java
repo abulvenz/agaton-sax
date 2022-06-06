@@ -2,10 +2,6 @@ package de.eismaenners.elements;
 
 import de.eismaenners.agatonsax.AgatonSax;
 import de.eismaenners.agatonsax.exceptions.MissingAnnotation;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -23,29 +19,36 @@ public class ElementReflectionTest {
 
     @Test(expected = MissingAnnotation.class)
     public void testRootWithoutAnnotationThrowsWhenAddingAnnotatedRoot() {
+        MutableObject<RootElementWithoutAnnotation> result = new MutableObject<>();
+
         AgatonSax.create()
-                .addAnnotatedRootClass(RootElementWithoutAnnotation.class, root -> {
-                })
+                .addAnnotatedRootClass(RootElementWithoutAnnotation.class, result::setObject)
                 .parseString("<RootElementWithoutAnnotation />");
+
+        assertNotNull(result.getObject());
+        assertNull(result.getObject().nested);
     }
 
     @Test
     public void testRootWithoutAnnotation() {
+        MutableObject<RootElementWithoutAnnotation> result = new MutableObject<>();
+
         AgatonSax.create()
-                .addRootClass(RootElementWithoutAnnotation.class, root -> {
-                })
+                .addRootClass(RootElementWithoutAnnotation.class, result::setObject)
                 .parseString("<RootElementWithoutAnnotation />");
+
+        assertNotNull(result.getObject());
+        assertNull(result.getObject().nested);
     }
 
     @Test
     public void testRootWithoutAnnotationAndNestedElement() {
- 
         MutableObject<RootElementWithoutAnnotation> result = new MutableObject<>();
 
         AgatonSax.create()
                 .addRootClass(RootElementWithoutAnnotation.class, result::setObject)
                 .parseString("<RootElementWithoutAnnotation><nested /></RootElementWithoutAnnotation>");
-        
+
         assertNotNull(result.getObject());
         assertNotNull(result.getObject().nested);
         assertNull(result.getObject().nested.name);
@@ -53,7 +56,6 @@ public class ElementReflectionTest {
 
     @Test
     public void testRootWithoutAnnotationAndNestedElementWithStringElement() {
-
         MutableObject<RootElementWithoutAnnotation> result = new MutableObject<>();
 
         AgatonSax.create()
@@ -69,9 +71,9 @@ public class ElementReflectionTest {
 
         assertEquals("My name be Gantenbein", result.object.nested.name);
     }
+
     @Test
     public void testRootWithoutAnnotationAndNestedElementWithStringAttribute() {
-
         MutableObject<RootElementWithoutAnnotation> result = new MutableObject<>();
 
         AgatonSax.create()
@@ -87,6 +89,7 @@ public class ElementReflectionTest {
 
         assertEquals("My name be Gantenbein", result.object.nested.name);
     }
+
     class MutableObject<T> {
 
         T object;

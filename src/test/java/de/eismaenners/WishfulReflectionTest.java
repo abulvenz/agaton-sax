@@ -170,7 +170,6 @@ public class WishfulReflectionTest {
                 = AgatonSax.create()
                         .addRootClass(File.class, files::add)
                         .getHandler();
-        System.err.println("Es ist so traurig");
 
         SAXParserFactory
                 .newDefaultInstance()
