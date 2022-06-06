@@ -55,15 +55,16 @@ public class ElementAnnotationTest {
         int Int;
 
         @XmlAttribute
-        Type type;
+        AnnotatedEnum type;
 
-        @XmlEnum
-        public enum Type {
-            @XmlEnumValue("T1")
-            T1,
-            @XmlEnumValue("T2")
-            T2
-        }
+    }
+
+    @XmlEnum
+    public enum AnnotatedEnum {
+        @XmlEnumValue("T1")
+        T1,
+        @XmlEnumValue("T2")
+        T2
     }
 
     @Test
@@ -103,7 +104,7 @@ public class ElementAnnotationTest {
                 "<root type=\"T1\" />"
         );
         assertNotNull(object);
-        assertEquals(RootElementWithAttributes.Type.T1, object.type);
+        assertEquals(AnnotatedEnum.T1, object.type);
     }
 
     @Test(expected = WrongEnumType.class)
@@ -127,7 +128,7 @@ public class ElementAnnotationTest {
         int Int;
 
         @XmlAttribute(name = "the-type")
-        RootElementWithAttributes.Type type;
+        AnnotatedEnum type;
     }
 
     @Test
@@ -167,7 +168,7 @@ public class ElementAnnotationTest {
                 "<root the-type=\"T1\" />"
         );
         assertNotNull(object);
-        assertEquals(RootElementWithAttributes.Type.T1, object.type);
+        assertEquals(AnnotatedEnum.T1, object.type);
     }
 
     @XmlRootElement(name = "root")
@@ -181,6 +182,9 @@ public class ElementAnnotationTest {
 
         @XmlElement
         int Int;
+
+        @XmlElement
+        AnnotatedEnum type;
     }
 
     @Test
@@ -201,6 +205,18 @@ public class ElementAnnotationTest {
                 RootWithElements.class,
                 "  <root>"
                 + "  <integer>3</integer>"
+                + "</root>"
+        );
+        assertNotNull(object);
+        assertEquals(Integer.valueOf(3), object.integer);
+    }
+
+        @Test
+    public void testEnumElement() {
+        RootWithElements object = parseAnnotatedElement(
+                RootWithElements.class,
+                "  <root>"
+                + "  <type>3</type>"
                 + "</root>"
         );
         assertNotNull(object);
