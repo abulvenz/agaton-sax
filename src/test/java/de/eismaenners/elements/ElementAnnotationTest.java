@@ -68,7 +68,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testStringAttribute() {
-        RootElementWithAttributes object = parseAnnotatedElement(RootElementWithAttributes.class,
+        RootElementWithAttributes object = parseAnnotatedElement(
+                RootElementWithAttributes.class,
                 "<root name=\"jupp\" />"
         );
         assertNotNull(object);
@@ -77,7 +78,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testIntegerAttribute() {
-        RootElementWithAttributes object = parseAnnotatedElement(RootElementWithAttributes.class,
+        RootElementWithAttributes object = parseAnnotatedElement(
+                RootElementWithAttributes.class,
                 "<root integer=\"3\" />"
         );
         assertNotNull(object);
@@ -86,7 +88,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testIntAttribute() {
-        RootElementWithAttributes object = parseAnnotatedElement(RootElementWithAttributes.class,
+        RootElementWithAttributes object = parseAnnotatedElement(
+                RootElementWithAttributes.class,
                 "<root Int=\"3\" />"
         );
         assertNotNull(object);
@@ -95,7 +98,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testEnumAttribute() {
-        RootElementWithAttributes object = parseAnnotatedElement(RootElementWithAttributes.class,
+        RootElementWithAttributes object = parseAnnotatedElement(
+                RootElementWithAttributes.class,
                 "<root type=\"T1\" />"
         );
         assertNotNull(object);
@@ -104,7 +108,8 @@ public class ElementAnnotationTest {
 
     @Test(expected = WrongEnumType.class)
     public void testWrongEnumAttribute() {
-        parseAnnotatedElement(RootElementWithAttributes.class,
+        parseAnnotatedElement(
+                RootElementWithAttributes.class,
                 "<root type=\"T12\" />"
         );
     }
@@ -127,7 +132,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testNamedStringAttribute() {
-        RootElementWithNamedAttributes object = parseAnnotatedElement(RootElementWithNamedAttributes.class,
+        RootElementWithNamedAttributes object = parseAnnotatedElement(
+                RootElementWithNamedAttributes.class,
                 "<root the-name=\"jupp\" />"
         );
         assertNotNull(object);
@@ -136,7 +142,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testNamedIntegerAttribute() {
-        RootElementWithNamedAttributes object = parseAnnotatedElement(RootElementWithNamedAttributes.class,
+        RootElementWithNamedAttributes object = parseAnnotatedElement(
+                RootElementWithNamedAttributes.class,
                 "<root the-integer=\"3\" />"
         );
         assertNotNull(object);
@@ -145,7 +152,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testNamedIntAttribute() {
-        RootElementWithNamedAttributes object = parseAnnotatedElement(RootElementWithNamedAttributes.class,
+        RootElementWithNamedAttributes object = parseAnnotatedElement(
+                RootElementWithNamedAttributes.class,
                 "<root the-int=\"3\" />"
         );
         assertNotNull(object);
@@ -154,7 +162,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testNamedEnumAttribute() {
-        RootElementWithNamedAttributes object = parseAnnotatedElement(RootElementWithNamedAttributes.class,
+        RootElementWithNamedAttributes object = parseAnnotatedElement(
+                RootElementWithNamedAttributes.class,
                 "<root the-type=\"T1\" />"
         );
         assertNotNull(object);
@@ -176,7 +185,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testStringElement() {
-        RootWithElements object = parseAnnotatedElement(RootWithElements.class,
+        RootWithElements object = parseAnnotatedElement(
+                RootWithElements.class,
                 "  <root>"
                 + "  <name>My funny Valentine</name>"
                 + "</root>"
@@ -187,7 +197,8 @@ public class ElementAnnotationTest {
 
     @Test
     public void testIntegerElement() {
-        RootWithElements object = parseAnnotatedElement(RootWithElements.class,
+        RootWithElements object = parseAnnotatedElement(
+                RootWithElements.class,
                 "  <root>"
                 + "  <integer>3</integer>"
                 + "</root>"
