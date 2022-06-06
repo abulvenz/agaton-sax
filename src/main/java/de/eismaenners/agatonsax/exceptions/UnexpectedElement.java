@@ -2,7 +2,7 @@ package de.eismaenners.agatonsax.exceptions;
 
 import java.util.List;
 
-public class UnexpectedElement extends RuntimeException {
+public class UnexpectedElement extends AgatonException {
 
     private String qName;
     private List expectedNames;

@@ -3,6 +3,7 @@ package de.eismaenners.agatonsax.utils;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Stack<T> {
 
@@ -45,11 +46,14 @@ public class Stack<T> {
     @Override
     public String toString() {
         return "\n"
-                + elements
-                        .stream()
+                + stream()
                         .map(e -> "  " + e)
                         .collect(Collectors.joining("\n"))
                 + "\n";
+    }
+
+    public Stream<T> stream() {
+        return elements.stream();
     }
 
 }

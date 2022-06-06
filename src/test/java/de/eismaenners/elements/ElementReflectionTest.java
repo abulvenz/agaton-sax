@@ -90,17 +90,4 @@ public class ElementReflectionTest {
         assertEquals("My name be Gantenbein", result.object.nested.name);
     }
 
-    class MutableObject<T> {
-
-        T object;
-
-        public void setObject(T object) {
-            this.object = object;
-        }
-
-        public T getObject() {
-            return object;
-        }
-
-    }
 }

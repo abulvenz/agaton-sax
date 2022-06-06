@@ -1,7 +1,7 @@
 package de.eismaenners.agatonsax.exceptions;
 
-public class AttributeMapperNotFound extends RuntimeException {
-    
+public class AttributeMapperNotFound extends AgatonException {
+
     Class<?> clasz;
 
     public AttributeMapperNotFound(Class<?> clasz) {
@@ -13,7 +13,5 @@ public class AttributeMapperNotFound extends RuntimeException {
     public String getMessage() {
         return "AttributeMapper not found for " + clasz.getName();
     }
-    
-   
-    
+
 }

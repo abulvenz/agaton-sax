@@ -2,7 +2,7 @@ package de.eismaenners.agatonsax.exceptions;
 
 import java.util.List;
 
-public class UnexpectedAttribute extends RuntimeException {
+public class UnexpectedAttribute extends AgatonException {
 
     private final String name;
     private final List<String> expected;

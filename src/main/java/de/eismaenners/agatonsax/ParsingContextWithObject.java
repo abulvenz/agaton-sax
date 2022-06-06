@@ -2,6 +2,7 @@ package de.eismaenners.agatonsax;
 
 import de.eismaenners.agatonsax.exceptions.UnexpectedAttribute;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class ParsingContextWithObject<OwnType, ParentType> extends ParsingContext<OwnType, ParentType> {
 
@@ -43,6 +44,13 @@ public class ParsingContextWithObject<OwnType, ParentType> extends ParsingContex
     public void addText(String str) {
         if (element.getClasz().equals(String.class)) {
             decoratee = (OwnType) str;
+        } else {
+            MapperCreator amc = new MapperCreator();
+            amc.addDefaultMappers();
+            Function<String, OwnType> mapper = amc.getMapper(element.getClasz());
+            if (mapper != null) {
+                decoratee = (OwnType) mapper.apply(str);
+            }
         }
     }
 
@@ -51,4 +59,9 @@ public class ParsingContextWithObject<OwnType, ParentType> extends ParsingContex
         return decoratee == null ? "null" : decoratee.getClass().toString();
     }
 
+    @Override
+    public String getPathFragment() {
+        return element.getTag();
+    }
+    
 }

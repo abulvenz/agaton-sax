@@ -3,7 +3,10 @@ package de.eismaenners.agatonsax;
 import de.eismaenners.agatonsax.exceptions.UnexpectedElement;
 import de.eismaenners.agatonsax.exceptions.UnexpectedEnd;
 import de.eismaenners.agatonsax.utils.Stack;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -12,11 +15,18 @@ public class DefaultHandlerImplementation extends DefaultHandler {
 
     private final Map<String, XMLElement<?, Void>> rootElementsByTag;
     private final Stack<ParsingContext> contextStack = new Stack<>();
-    StringBuilder buildi;
+    StringBuilder buildi=null;
     private final boolean VERBOSE = false;
+    Map<String, BiConsumer<?, ?>> customHandlers;
+
+    public DefaultHandlerImplementation(Map<String, XMLElement<?, Void>> rootElementsByTag, Map<String, BiConsumer<?, ?>> customHandlers) {
+        this.rootElementsByTag = rootElementsByTag;
+        this.customHandlers = customHandlers;
+    }
 
     DefaultHandlerImplementation(Map<String, XMLElement<?, Void>> rootElementsByTag) {
         this.rootElementsByTag = rootElementsByTag;
+        customHandlers = new HashMap<>();
     }
 
     @Override
@@ -37,7 +47,7 @@ public class DefaultHandlerImplementation extends DefaultHandler {
         contextStack.push(new ParsingContextWithObject(nextElement));
 
         contextStack.top().createObject();
-       
+
         if (VERBOSE) {
             System.out.println("Current stack: " + contextStack);
         }
@@ -62,6 +72,10 @@ public class DefaultHandlerImplementation extends DefaultHandler {
         }
 
         if (contextStack.size() > 2) {
+            String path = contextStack.stream()
+                    .map(ParsingContext::getPathFragment)
+                    .collect(Collectors.joining("/"));
+
             contextStack.top().reduce(contextStack.next());
         } else {
             contextStack.top().reduce(null);

@@ -1,6 +1,6 @@
 package de.eismaenners.agatonsax.exceptions;
 
-public class MissingAnnotation extends RuntimeException {
+public class MissingAnnotation extends AgatonException {
 
     private final String message;
 

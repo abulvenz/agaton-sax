@@ -31,7 +31,7 @@ public final class AnnotationCreator {
     private static final String DEFAULT_NAME = "##default";
 
     Set<Class<?>> terminalClasses = new HashSet<>();
-    AttributeMapperCreator mapperCreator = new AttributeMapperCreator();
+    MapperCreator mapperCreator = new MapperCreator();
 
     public AnnotationCreator() {
         mapperCreator.addDefaultMappers();
@@ -81,6 +81,8 @@ public final class AnnotationCreator {
     }
 
     <T> T safelyCreateDecoratee(Class<T> clasz) {
+        if( Integer.class.equals (clasz))
+            return (T) new Integer(0);
         try {
             return clasz.getDeclaredConstructor().newInstance();
         } catch (NoSuchMethodException
@@ -230,7 +232,7 @@ public final class AnnotationCreator {
                 = attribute(
                         tag,
                         clasz,
-                        mapperCreator.getMapper(clasz),
+                        mapperCreator.getMapperOrThrow(clasz),
                         (parent, child) -> safeAssign(parent, child, field)
                 );
 

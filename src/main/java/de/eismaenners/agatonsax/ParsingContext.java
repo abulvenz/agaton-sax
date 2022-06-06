@@ -49,4 +49,7 @@ public class ParsingContext<T, P> {
         return expectedElementsByTag.toString();
     }
 
+    public String getPathFragment() {
+        return "";
+    }
 }

@@ -74,11 +74,6 @@ public final class AgatonSax {
         return new DefaultHandlerImplementation(rootElementsByTag);
     }
 
-    public static <T> Consumer<T> NO_OP() {
-        return t -> {
-        };
-    }
-
     public <T> AgatonSax addAnnotatedRootClass(Class<T> clasz, Consumer<T> whenParsed) {
         XMLElement<T, Void> element = annotationDecorator.createAnnotatedRoot(clasz, whenParsed);
         this.rootElementsByTag.put(element.getTag(), element);
