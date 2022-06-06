@@ -1,5 +1,6 @@
 package de.eismaenners;
 
+import static org.junit.Assert.*;
 import static de.eismaenners.agatonsax.AgatonSax.*;
 import de.eismaenners.agatonsax.AgatonSax;
 import java.io.ByteArrayInputStream;
@@ -16,7 +17,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 

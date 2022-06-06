@@ -1,6 +1,7 @@
 package de.eismaenners.agatonsax;
 
 import de.eismaenners.agatonsax.exceptions.UnexpectedElement;
+import de.eismaenners.agatonsax.exceptions.UnexpectedEnd;
 import de.eismaenners.agatonsax.utils.Stack;
 import java.util.Map;
 import org.xml.sax.Attributes;
@@ -12,16 +13,16 @@ public class DefaultHandlerImplementation extends DefaultHandler {
     private final Map<String, XMLElement<?, Void>> rootElementsByTag;
     private final Stack<ParsingContext> contextStack = new Stack<>();
     StringBuilder buildi;
+    private final boolean VERBOSE = false;
 
     DefaultHandlerImplementation(Map<String, XMLElement<?, Void>> rootElementsByTag) {
         this.rootElementsByTag = rootElementsByTag;
-        contextStack.push(new ParsingContext(rootElementsByTag));
     }
 
     @Override
     public void startDocument() throws SAXException {
         super.startDocument();
-
+        contextStack.push(new ParsingContext(rootElementsByTag));
     }
 
     @Override
@@ -36,13 +37,14 @@ public class DefaultHandlerImplementation extends DefaultHandler {
         contextStack.push(new ParsingContextWithObject(nextElement));
 
         contextStack.top().createObject();
-
-        System.out.println("Current stack: " + contextStack);
+       
+        if (VERBOSE) {
+            System.out.println("Current stack: " + contextStack);
+        }
 
         for (int i = 0; i < attributes.getLength(); i++) {
             String name = attributes.getQName(i);
             String value = attributes.getValue(i);
-            String type = attributes.getType(i);
             contextStack.top().applyAttribute(name, value);
         }
 
@@ -66,7 +68,6 @@ public class DefaultHandlerImplementation extends DefaultHandler {
         }
 
         contextStack.pop();
-
     }
 
     @Override
@@ -80,6 +81,9 @@ public class DefaultHandlerImplementation extends DefaultHandler {
     @Override
     public void endDocument() throws SAXException {
         super.endDocument();
+        if (contextStack.size() != 1) {
+            throw new UnexpectedEnd();
+        }
     }
 
 }

@@ -1,6 +1,7 @@
 package de.eismaenners.agatonsax;
 
 import static de.eismaenners.agatonsax.AgatonSax.*;
+import de.eismaenners.agatonsax.exceptions.AttributeMapperNotFound;
 import de.eismaenners.agatonsax.exceptions.CannotCreateInstance;
 import de.eismaenners.agatonsax.exceptions.FieldNotAccessible;
 import de.eismaenners.agatonsax.exceptions.MissingAnnotation;
@@ -59,7 +60,6 @@ public final class AnnotationCreator {
         );
 
         addFieldElementsAndAttributes(clasz, newElement);
-        System.err.println(newElement.print(""));
         return newElement;
     }
 
@@ -201,6 +201,12 @@ public final class AnnotationCreator {
     }
 
     <C> Function<String, C> getMapper(Class<C> clasz) {
-        return (Function< String, C>) mappers.get(clasz);
+        Function<String, C> mapper = (Function< String, C>) mappers.get(clasz);
+        
+        if (mapper == null) {
+            throw new AttributeMapperNotFound(clasz);
+        }
+        
+        return mapper;
     }
 }
