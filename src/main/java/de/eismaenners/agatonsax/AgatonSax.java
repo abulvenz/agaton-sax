@@ -1,11 +1,19 @@
 package de.eismaenners.agatonsax;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public final class AgatonSax {
@@ -72,8 +80,27 @@ public final class AgatonSax {
     }
 
     public <T> AgatonSax addAnnotatedRootClass(Class<T> clasz, Consumer<T> whenParsed) {
+        XMLElement<T, Void> element = annotationDecorator.createAnnotatedRoot(clasz, whenParsed);
+        this.rootElementsByTag.put(element.getTag(), element);
+        return this;
+    }
+
+    public <T> AgatonSax addRootClass(Class<T> clasz, Consumer<T> whenParsed) {
         XMLElement<T, Void> element = annotationDecorator.createRoot(clasz, whenParsed);
         this.rootElementsByTag.put(element.getTag(), element);
         return this;
+    }
+    
+    public void parseString(String xml) {
+        try {
+        SAXParser parser = SAXParserFactory.newDefaultInstance().newSAXParser();
+            parser.parse(new ByteArrayInputStream(xml.getBytes()), getHandler());
+        } catch (SAXException ex) {
+            Logger.getLogger(AgatonSax.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(AgatonSax.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(AgatonSax.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

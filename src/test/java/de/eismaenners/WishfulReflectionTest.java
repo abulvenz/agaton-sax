@@ -164,24 +164,29 @@ public class WishfulReflectionTest {
 
     @Test
     public void testMethod() throws ParserConfigurationException, SAXException, IOException {
+        try {
         List<File> files = new ArrayList<>();
         DefaultHandler handler
                 = AgatonSax.create()
-                        .addAnnotatedRootClass(File.class, files::add)
+                        .addRootClass(File.class, files::add)
                         .getHandler();
+        System.err.println("Es ist so traurig");
 
         SAXParserFactory
                 .newDefaultInstance()
                 .newSAXParser()
                 .parse(new ByteArrayInputStream(xml.getBytes()), handler);
 
-        assertEquals(1, files.size());
-        assertEquals("c:\\autoexec.bat", files.get(0).name);
-        assertEquals(Integer.valueOf(11), files.get(0).time.hour);
-        assertEquals(55, files.get(0).time.minute);
-        assertEquals("owner", files.get(0).properties.get(0).key);
-        assertEquals("root", files.get(0).properties.get(0).value);
+        assertEquals("Size is 1",1, files.size());
+        assertEquals("Name is correct","c:\\autoexec.bat", files.get(0).name);
+        assertEquals("Hour is correct", Integer.valueOf(11), files.get(0).time.hour);
+        assertEquals("Minute is correct",55, files.get(0).time.minute);
+        assertEquals("Owner key is correct","owner", files.get(0).properties.get(0).key);
+        assertEquals("Owner value is correct", "root", files.get(0).properties.get(0).value);
 
-        assertEquals(new File("c:\\autoexec.bat", new File.Time(11, 55)), files.get(0));
+        assertEquals("Files are equal", new File("c:\\autoexec.bat", new File.Time(11, 55)), files.get(0));
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

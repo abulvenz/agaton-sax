@@ -6,7 +6,7 @@
 
     <groupId>de.eismaenners</groupId>
     <artifactId>agatonsax</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-beta</version>
     <description>
         Parse large XML files from a stream using a SAX parser. 
         You can either create your XML specification manually and 

@@ -9,16 +9,17 @@ import de.eismaenners.agatonsax.utils.Reflection;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlElements;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -27,28 +28,44 @@ import java.util.logging.Logger;
 
 public final class AnnotationCreator {
 
-    Map<Class<?>, Function<String, ?>> mappers = new HashMap<>();
+    private static final String DEFAULT_NAME = "##default";
+
+    Set<Class<?>> terminalClasses = new HashSet<>();
+    AttributeMapperCreator mapperCreator = new AttributeMapperCreator();
 
     public AnnotationCreator() {
-        addMapper(String.class, Function.identity());
-        addMapper(Integer.class, Integer::decode);
-        addMapper(Double.class, Double::parseDouble);
-        addMapper(Float.class, Float::parseFloat);
-        addMapper(Boolean.class, Boolean::parseBoolean);
-        addMapper(Short.class, Short::parseShort);
+        mapperCreator.addDefaultMappers();
+        addDefaultTerminalClasses();
+    }
+
+    protected void addDefaultTerminalClasses() {
+        terminalClasses.addAll(Set.of(
+                String.class,
+                Integer.class,
+                Float.class,
+                Double.class,
+                Boolean.class
+        ));
     }
 
     public <C> void addMapper(Class<C> clasz, Function< String, C> mapper) {
-        mappers.put(clasz, mapper);
+        mapperCreator.addMapper(clasz, mapper);
     }
 
-    <T> XMLElement<T, Void> createRoot(Class<T> clasz, Consumer<T> whenParsed) {
+    <T> XMLElement<T, Void> createAnnotatedRoot(Class<T> clasz, Consumer<T> whenParsed) {
         XmlRootElement annotation = clasz.getAnnotation(XmlRootElement.class);
         if (annotation == null) {
             throw new MissingAnnotation("Root must be annotated");
         }
+        return createRoot(clasz, whenParsed);
+    }
 
-        String name = annotation.name() != null
+    <T> XMLElement<T, Void> createRoot(Class<T> clasz, Consumer<T> whenParsed) {
+        XmlRootElement annotation = clasz.getAnnotation(XmlRootElement.class);
+
+        String name = annotation != null
+                && annotation.name() != null
+                && !annotation.name().equals(DEFAULT_NAME)
                 ? annotation.name()
                 : clasz.getSimpleName();
 
@@ -81,6 +98,7 @@ public final class AnnotationCreator {
         if (field.isAnnotationPresent(XmlElementWrapper.class)) {
             XmlElementWrapper wrapperAnnotation = field.getAnnotation(XmlElementWrapper.class);
             String wrapperTag = wrapperAnnotation.name() != null
+                    && !wrapperAnnotation.name().equals(DEFAULT_NAME)
                     ? wrapperAnnotation.name()
                     : field.getName();
 
@@ -112,9 +130,11 @@ public final class AnnotationCreator {
 
     private <C, T, P> void createElement(Field field, Class<C> clasz, XMLElement<T, P> newElement, BiConsumer<T, C> whenParsed_) {
         XmlElement elementAnnotations = field.getAnnotation(XmlElement.class);
-        String tag = elementAnnotations.name() != null
+        String tag = elementAnnotations != null
+                && elementAnnotations.name() != null
+                && !elementAnnotations.name().equals(DEFAULT_NAME)
                 ? elementAnnotations.name()
-                : clasz.getSimpleName();
+                : field.getName();
 
         BiConsumer<T, C> whenParsed = whenParsed_ == null
                 ? (parent, child) -> safeAssign(parent, child, field)
@@ -131,12 +151,27 @@ public final class AnnotationCreator {
     }
 
     private <C, T> void addFieldElementsAndAttributes(Class<C> clasz, XMLElement<C, T> subElement) throws AssertionError {
+        if (terminalClasses.contains(clasz)) {
+            return;
+        }
         for (Field nField : Reflection.fieldsBeforeObjectClass(clasz)) {
-            if (nField.isAnnotationPresent(XmlElement.class)) {
+            if (nField.isAnnotationPresent(XmlElement.class)
+                    || nField.isAnnotationPresent(XmlElements.class)
+                    || nField.isAnnotationPresent(XmlElementWrapper.class)) {
                 reflectOnElement(nField, nField.getType(), subElement);
             } else if (nField.isAnnotationPresent(XmlAttribute.class)) {
                 Class<?> fieldType = determineFieldType(nField);
                 assignAttribute(nField, fieldType, subElement);
+            } else {
+                Class<?> fieldType = determineFieldType(nField);
+                reflectOnElement(nField, fieldType, subElement);
+                try {
+                    assignAttribute(nField, fieldType, subElement);
+                } catch (AttributeMapperNotFound e) {
+                    /**
+                     * In this case it is a rather complex type.
+                     */
+                }
             }
         }
     }
@@ -185,28 +220,21 @@ public final class AnnotationCreator {
     private <T, P, C> void assignAttribute(Field field, Class<C> clasz, XMLElement<T, P> newElement) {
 
         XmlAttribute attributeAnnotations = field.getAnnotation(XmlAttribute.class);
-        String tag = attributeAnnotations.name() != null
+        String tag = attributeAnnotations != null
+                && attributeAnnotations.name() != null
+                && !attributeAnnotations.name().equals(DEFAULT_NAME)
                 ? attributeAnnotations.name()
-                : clasz.getSimpleName();
+                : field.getName();
 
         XMLAttribute<C, T> newAttribute
                 = attribute(
                         tag,
                         clasz,
-                        getMapper(clasz),
+                        mapperCreator.getMapper(clasz),
                         (parent, child) -> safeAssign(parent, child, field)
                 );
 
         newElement.addAttribute(newAttribute);
     }
 
-    <C> Function<String, C> getMapper(Class<C> clasz) {
-        Function<String, C> mapper = (Function< String, C>) mappers.get(clasz);
-        
-        if (mapper == null) {
-            throw new AttributeMapperNotFound(clasz);
-        }
-        
-        return mapper;
-    }
 }
