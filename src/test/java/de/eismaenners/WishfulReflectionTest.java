@@ -12,10 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.xml.sax.SAXException;
@@ -49,6 +45,12 @@ public class WishfulReflectionTest {
             String key;
             @XmlAttribute(name = "value")
             String value;
+
+            @Override
+            public String toString() {
+                return "Property " + key + "=" + value;
+            }
+
         }
 
         public static class Time {
@@ -150,6 +152,7 @@ public class WishfulReflectionTest {
         DefaultHandler handler
                 = AgatonSax.create()
                         .addRootClass(File.class, files::add)
+                        .addInterceptor("/file/properties/property", File.Property.class, property -> System.out.println(property.toString()))
                         .getHandler();
 
         SAXParserFactory
@@ -161,6 +164,7 @@ public class WishfulReflectionTest {
         assertEquals("Name is correct", "c:\\autoexec.bat", files.get(0).name);
         assertEquals("Hour is correct", Integer.valueOf(11), files.get(0).time.hour);
         assertEquals("Minute is correct", 55, files.get(0).time.minute);
+        assertEquals("Property is present", 1, files.get(0).properties.size());
         assertEquals("Owner key is correct", "owner", files.get(0).properties.get(0).key);
         assertEquals("Owner value is correct", "root", files.get(0).properties.get(0).value);
 

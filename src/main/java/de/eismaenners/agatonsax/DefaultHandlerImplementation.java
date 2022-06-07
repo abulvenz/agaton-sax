@@ -15,11 +15,11 @@ public class DefaultHandlerImplementation extends DefaultHandler {
 
     private final Map<String, XMLElement<?, Void>> rootElementsByTag;
     private final Stack<ParsingContext> contextStack = new Stack<>();
-    StringBuilder buildi=null;
-    public static final boolean VERBOSE = true;
-    Map<String, BiConsumer<?, ?>> customHandlers;
+    StringBuilder buildi = null;
+    public static final boolean VERBOSE = false;
+    Map<String, Interceptor<?>> customHandlers;
 
-    public DefaultHandlerImplementation(Map<String, XMLElement<?, Void>> rootElementsByTag, Map<String, BiConsumer<?, ?>> customHandlers) {
+    public DefaultHandlerImplementation(Map<String, XMLElement<?, Void>> rootElementsByTag, Map<String, Interceptor<?>> customHandlers) {
         this.rootElementsByTag = rootElementsByTag;
         this.customHandlers = customHandlers;
     }
@@ -76,7 +76,16 @@ public class DefaultHandlerImplementation extends DefaultHandler {
                     .map(ParsingContext::getPathFragment)
                     .collect(Collectors.joining("/"));
 
-            contextStack.top().reduce(contextStack.next());
+            if (DefaultHandlerImplementation.VERBOSE) {
+                System.err.println("current path " + path);
+            }
+
+            if (customHandlers.containsKey(path)) {
+                customHandlers.get(path).intercept(contextStack.top().getObject(), contextStack.next().getObject());
+            } else {
+                contextStack.top().reduce(contextStack.next());
+            }
+
         } else {
             contextStack.top().reduce(null);
         }
