@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -61,13 +62,7 @@ public final class AnnotationCreator {
     }
 
     <T> XMLElement<T, Void> createRoot(Class<T> clasz, Consumer<T> whenParsed) {
-        XmlRootElement annotation = clasz.getAnnotation(XmlRootElement.class);
-
-        String name = annotation != null
-                && annotation.name() != null
-                && !annotation.name().equals(DEFAULT_NAME)
-                ? annotation.name()
-                : clasz.getSimpleName();
+        String name = determineRootName(clasz);
 
         XMLElement<T, Void> newElement = element(
                 name,
@@ -78,6 +73,16 @@ public final class AnnotationCreator {
 
         addFieldElementsAndAttributes(clasz, newElement);
         return newElement;
+    }
+
+    private <T> String determineRootName(Class<T> clasz) {
+        XmlRootElement annotation = clasz.getAnnotation(XmlRootElement.class);
+        String name = annotation != null
+                && annotation.name() != null
+                && !annotation.name().equals(DEFAULT_NAME)
+                ? annotation.name()
+                : clasz.getSimpleName();
+        return name;
     }
 
     <T> T safelyCreateDecoratee(Class<T> clasz) {
@@ -100,7 +105,7 @@ public final class AnnotationCreator {
         }
     }
 
-    private <T, P, C> void reflectOnElement(Field field, Class<C> clasz, XMLElement<T, P> newElement) {
+    private <T, P, C> void reflectOnElement(Field field, Class<C> clasz, XMLElement<T, P> currentElement) {
         if (field.isAnnotationPresent(XmlElementWrapper.class)) {
             XmlElementWrapper wrapperAnnotation = field.getAnnotation(XmlElementWrapper.class);
             String wrapperTag = wrapperAnnotation.name() != null
@@ -109,10 +114,10 @@ public final class AnnotationCreator {
                     : field.getName();
 
             XMLElement<List, T> wrapperElement = element(wrapperTag, List.class, LinkedList::new, (parent, list) -> safeAssign(parent, list, field));
-            newElement.addElement(wrapperElement);
+            currentElement.addElement(wrapperElement);
             createElement(field, findGenericType(field), wrapperElement, List::add);
         } else {
-            createElement(field, clasz, newElement, null);
+            createElement(field, clasz, currentElement, null);
         }
     }
 
@@ -135,28 +140,38 @@ public final class AnnotationCreator {
     }
 
     private <C, T, P> void createElement(Field field, Class<C> clasz, XMLElement<T, P> newElement, BiConsumer<T, C> whenParsed_) {
+        String tag = determineElementName(field);
+
+        BiConsumer<T, C> whenParsed = whenParsed_ == null
+                ? (parent, child) -> safeAssign(parent, child, field)
+                : whenParsed_;
+
+        XMLElement<C, T> subElement = element(
+                tag,
+                clasz,
+                () -> safelyCreateDecoratee(clasz),
+                whenParsed
+        );
+
+        if (!(newElement.getClasz().equals(subElement.getClasz()) && Objects.equals(tag, newElement.getTag()))) {
+            newElement.addElement(subElement);
+            addFieldElementsAndAttributes(clasz, subElement);
+        } else {
+            newElement.addElement((XMLElement<C, T>) newElement);
+        }
+    }
+
+    private String determineElementName(Field field) {
         XmlElement elementAnnotations = field.getAnnotation(XmlElement.class);
         String tag = elementAnnotations != null
                 && elementAnnotations.name() != null
                 && !elementAnnotations.name().equals(DEFAULT_NAME)
                 ? elementAnnotations.name()
                 : field.getName();
-
-        BiConsumer<T, C> whenParsed = whenParsed_ == null
-                ? (parent, child) -> safeAssign(parent, child, field)
-                : whenParsed_;
-
-        XMLElement<C, T> subElement = element(tag,
-                clasz,
-                () -> safelyCreateDecoratee(clasz),
-                whenParsed);
-
-        newElement.addElement(subElement);
-
-        addFieldElementsAndAttributes(clasz, subElement);
+        return tag;
     }
 
-    private <C, T> void addFieldElementsAndAttributes(Class<C> clasz, XMLElement<C, T> subElement) throws AssertionError {
+    private <C, P> void addFieldElementsAndAttributes(Class<C> clasz, XMLElement<C, P> subElement) throws AssertionError {
         if (terminalClasses.contains(clasz) || clasz.isEnum()) {
             return;
         }
@@ -225,12 +240,7 @@ public final class AnnotationCreator {
 
     private <T, P, C> void assignAttribute(Field field, Class<C> clasz, XMLElement<T, P> newElement) {
 
-        XmlAttribute attributeAnnotations = field.getAnnotation(XmlAttribute.class);
-        String tag = attributeAnnotations != null
-                && attributeAnnotations.name() != null
-                && !attributeAnnotations.name().equals(DEFAULT_NAME)
-                ? attributeAnnotations.name()
-                : field.getName();
+        String tag = determineAttributeName(field);
 
         XMLAttribute<C, T> newAttribute
                 = attribute(
@@ -241,6 +251,16 @@ public final class AnnotationCreator {
                 );
 
         newElement.addAttribute(newAttribute);
+    }
+
+    private String determineAttributeName(Field field) {
+        XmlAttribute attributeAnnotations = field.getAnnotation(XmlAttribute.class);
+        String tag = attributeAnnotations != null
+                && attributeAnnotations.name() != null
+                && !attributeAnnotations.name().equals(DEFAULT_NAME)
+                ? attributeAnnotations.name()
+                : field.getName();
+        return tag;
     }
 
 }

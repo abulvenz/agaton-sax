@@ -11,6 +11,7 @@ import jakarta.xml.bind.annotation.XmlEnumValue;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 
 public class ElementAnnotationTest {
@@ -42,7 +43,7 @@ public class ElementAnnotationTest {
         );
         assertNotNull(object);
     }
-    
+
     @XmlRootElement(name = "root")
     public static class RootElementWithAttributes {
 
@@ -115,7 +116,7 @@ public class ElementAnnotationTest {
                 "<root not-present=\"this is\" />"
         );
     }
-    
+
     @Test(expected = WrongEnumType.class)
     public void testWrongEnumAttribute() {
         parseAnnotatedElement(
@@ -249,32 +250,64 @@ public class ElementAnnotationTest {
                 "  <root>"
                 + "  <unknown></unknown>"
                 + "</root>"
-        );        
+        );
     }
-    
+
     @XmlRootElement(name = "root")
     public static class RootWithNestedElements {
+
         public static class Nested {
+
             @XmlElement(name = "further")
             Nested nested;
+
+            @XmlElement
+            String content;
         }
         @XmlElement(name = "onroot")
         Nested nested;
     }
-    
+
     @Test
     public void testNestedElements() {
         RootWithNestedElements object = parseAnnotatedElement(
                 RootWithNestedElements.class,
                 "  <root>"
-                + "  <type>T1</type>"
+                + "  <onroot>"
+                + "    <further />"
+                + "  </onroot>"
                 + "</root>"
         );
         assertNotNull(object);
         assertNotNull(object.nested);
         assertNotNull(object.nested.nested);
     }
-    
+
+    @Test
+    public void testFurtherNestedElements() {
+        RootWithNestedElements object = parseAnnotatedElement(
+                RootWithNestedElements.class,
+                "  <root>"
+                + "  <onroot>"
+                + "    <further>"
+                + "      <further>"
+                + "        <further>"
+                + "          <content>TheContent</content>"
+                + "        </further>"
+                + "      </further>"
+                + "    </further>"
+                + "  </onroot>"
+                + "</root>"
+        );
+        assertNotNull(object);
+        assertNotNull(object.nested);
+        assertNotNull(object.nested.nested);
+        assertNotNull(object.nested.nested.nested);
+        assertNotNull(object.nested.nested.nested.nested);
+        assertNull(object.nested.nested.nested.nested.nested);
+        assertEquals("TheContent", object.nested.nested.nested.nested.content);
+    }
+
     private <T> T parseAnnotatedElement(Class<T> clasz, String xml) {
         MutableObject<T> result = new MutableObject<>();
         AgatonSax.create()
