@@ -11,6 +11,9 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlElements;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
+import jakarta.xml.bind.annotation.XmlType;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -26,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public final class AnnotationCreator {
 
@@ -107,18 +111,66 @@ public final class AnnotationCreator {
 
     private <T, P, C> void reflectOnElement(Field field, Class<C> clasz, XMLElement<T, P> currentElement) {
         if (field.isAnnotationPresent(XmlElementWrapper.class)) {
-            XmlElementWrapper wrapperAnnotation = field.getAnnotation(XmlElementWrapper.class);
-            String wrapperTag = wrapperAnnotation.name() != null
-                    && !wrapperAnnotation.name().equals(DEFAULT_NAME)
-                    ? wrapperAnnotation.name()
-                    : field.getName();
+            String wrapperTag = determineWrapperTag(field);
 
             XMLElement<List, T> wrapperElement = element(wrapperTag, List.class, LinkedList::new, (parent, list) -> safeAssign(parent, list, field));
             currentElement.addElement(wrapperElement);
-            createElement(field, findGenericType(field), wrapperElement, List::add);
+
+            List<XmlElement> subElements
+                    = field.isAnnotationPresent(XmlElements.class)
+                    ? Arrays.stream(field.getAnnotation(XmlElements.class).value())
+                            .collect(Collectors.toList())
+                    : field.isAnnotationPresent(XmlElement.class)
+                    ? Arrays.asList(field.getAnnotation(XmlElement.class))
+                    : Arrays.asList();
+
+            if (subElements.isEmpty()) {
+                Class<?> findGenericType = findGenericType(field);
+                if (findGenericType.isAnnotationPresent(XmlSeeAlso.class)) {
+                    XmlSeeAlso seeAlso = findGenericType.getAnnotation(XmlSeeAlso.class);
+                    for (Class<?> clz : seeAlso.value()) {
+                        String tag = determineSeeAlsoElementName(clz);
+                        createElement(tag, clz, wrapperElement, List::add);
+                    }
+                }
+                createElement(field, findGenericType, wrapperElement, List::add);
+            } else {
+                for (XmlElement elementAnnotation : subElements) {
+                    String tag = determineListElementTag(elementAnnotation, field);
+                    Class nClass = elementAnnotation.type();
+                    createElement(tag, nClass, wrapperElement, List::add);
+                }
+            }
+
         } else {
             createElement(field, clasz, currentElement, null);
         }
+    }
+
+    private String determineWrapperTag(Field field) {
+        XmlElementWrapper wrapperAnnotation = field.getAnnotation(XmlElementWrapper.class);
+        String wrapperTag = wrapperAnnotation.name() != null
+                && !wrapperAnnotation.name().equals(DEFAULT_NAME)
+                ? wrapperAnnotation.name()
+                : field.getName();
+        return wrapperTag;
+    }
+
+    private String determineListElementTag(XmlElement sp, Field field) {
+        String tag = sp.name() != null && !DEFAULT_NAME.equals(sp.name())
+                ? sp.name()
+                : "" + field.getName();
+        return tag;
+    }
+
+    private <C> String determineSeeAlsoElementName(Class<C> clz) {
+        XmlType elementAnnotations = clz.getAnnotation(XmlType.class);
+        String tag = elementAnnotations != null
+                && elementAnnotations.name() != null
+                && !elementAnnotations.name().equals(DEFAULT_NAME)
+                ? elementAnnotations.name()
+                : clz.getName();
+        return tag;
     }
 
     private Class findGenericType(Field field) {
@@ -146,6 +198,10 @@ public final class AnnotationCreator {
                 ? (parent, child) -> safeAssign(parent, child, field)
                 : whenParsed_;
 
+        createElement(tag, clasz, newElement, whenParsed);
+    }
+
+    private <C, T, P> void createElement(String tag, Class<C> clasz, XMLElement<T, P> newElement, BiConsumer<T, C> whenParsed) {
         XMLElement<C, T> subElement = element(
                 tag,
                 clasz,

@@ -1,5 +1,6 @@
 package de.eismaenners.agatonsax;
 
+import de.eismaenners.agatonsax.exceptions.UnambiguousElementTag;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,9 @@ public class XMLElement<OwnType, ParentType> implements XMLContent<OwnType, Pare
     }
 
     <C> void addElement(XMLElement<C, OwnType> subElement) {
+        if (subElementsByTag.containsKey(subElement.tag)) {
+            throw new UnambiguousElementTag(subElement.tag, tag);
+        }
         subElementsByTag.put(subElement.tag, subElement);
     }
 
