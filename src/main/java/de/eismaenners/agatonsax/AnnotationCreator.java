@@ -81,8 +81,12 @@ public final class AnnotationCreator {
     }
 
     <T> T safelyCreateDecoratee(Class<T> clasz) {
-        if( Integer.class.equals (clasz))
+        if (Integer.class.equals(clasz)) {
             return (T) new Integer(0);
+        }
+        if (clasz.isEnum()) {
+            return null;
+        }
         try {
             return clasz.getDeclaredConstructor().newInstance();
         } catch (NoSuchMethodException
@@ -153,7 +157,7 @@ public final class AnnotationCreator {
     }
 
     private <C, T> void addFieldElementsAndAttributes(Class<C> clasz, XMLElement<C, T> subElement) throws AssertionError {
-        if (terminalClasses.contains(clasz)) {
+        if (terminalClasses.contains(clasz) || clasz.isEnum()) {
             return;
         }
         for (Field nField : Reflection.fieldsBeforeObjectClass(clasz)) {
