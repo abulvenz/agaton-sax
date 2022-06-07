@@ -102,7 +102,7 @@ public class XMLElement<OwnType, ParentType> implements XMLContent<OwnType, Pare
         final String tagContent = String.join(" ", Arrays.asList(tag, attributeString).stream()
                 .filter(Predicate.not(String::isBlank))
                 .collect(Collectors.toList()));
-        
+
         String str = indent + "<" + tagContent + ">\n";
 
         for (XMLElement sub : subElementsByTag.values()) {
@@ -111,6 +111,11 @@ public class XMLElement<OwnType, ParentType> implements XMLContent<OwnType, Pare
         str += indent + "</" + tag + ">\n";
 
         return str;
+    }
+
+    @Override
+    public String toString() {
+        return "<" + tag + " [" + clasz + "] sub [" + subElementsByTag.keySet() + "]>";
     }
 
 }
