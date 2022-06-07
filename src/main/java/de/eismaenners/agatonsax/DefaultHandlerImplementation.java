@@ -16,7 +16,7 @@ public class DefaultHandlerImplementation extends DefaultHandler {
     private final Map<String, XMLElement<?, Void>> rootElementsByTag;
     private final Stack<ParsingContext> contextStack = new Stack<>();
     StringBuilder buildi=null;
-    private final boolean VERBOSE = false;
+    public static final boolean VERBOSE = true;
     Map<String, BiConsumer<?, ?>> customHandlers;
 
     public DefaultHandlerImplementation(Map<String, XMLElement<?, Void>> rootElementsByTag, Map<String, BiConsumer<?, ?>> customHandlers) {

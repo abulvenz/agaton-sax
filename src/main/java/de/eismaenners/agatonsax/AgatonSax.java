@@ -17,11 +17,11 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public final class AgatonSax {
-
+    
     public static AgatonSax create() {
         return new AgatonSax();
     }
-
+    
     public static <T, P> XMLElement<T, P> element(
             String tag,
             Class<T> clasz,
@@ -30,7 +30,7 @@ public final class AgatonSax {
             XMLContent<?, T>... subElements
     ) {
         final XMLElement element = new XMLElement(tag, clasz, creator, whenParsed);
-
+        
         for (XMLContent<?, T> subElement : subElements) {
             if (subElement.contentType() == XMLContent.XMLContentType.ELEMENT) {
                 element.addElement((XMLElement<?, T>) subElement);
@@ -40,7 +40,7 @@ public final class AgatonSax {
         }
         return element;
     }
-
+    
     public static <T, P> XMLAttribute<T, P> attribute(
             String name,
             Class<T> clasz,
@@ -49,16 +49,16 @@ public final class AgatonSax {
     ) {
         return new XMLAttribute<>(name, clasz, parser, whenParsed);
     }
-
+    
     Map<String, XMLElement<?, Void>> rootElementsByTag = new HashMap<>();
     private AnnotationCreator annotationDecorator = new AnnotationCreator();
-
+    
     public <T> AgatonSax addRootElement(String tag, Class<T> clasz, Supplier<T> creator,
             Consumer<T> whenParsed, XMLContent<?, T>... subElements) {
-
+        
         XMLElement<T, Void> element = new XMLElement<>(tag, clasz, creator, (parent, obj) -> whenParsed.accept(obj));
         rootElementsByTag.put(tag, element);
-
+        
         for (XMLContent<?, T> subElement : subElements) {
             if (subElement.contentType() == XMLContent.XMLContentType.ELEMENT) {
                 element.addElement((XMLElement<?, T>) subElement);
@@ -66,20 +66,23 @@ public final class AgatonSax {
                 element.addAttribute((XMLAttribute<?, T>) subElement);
             }
         }
-
+        
         return this;
     }
-
+    
     public DefaultHandler getHandler() {
+        
+        rootElementsByTag.forEach((tag, element) -> System.out.println(tag + "\n----------\n" + element.print("")));
+        
         return new DefaultHandlerImplementation(rootElementsByTag);
     }
-
+    
     public <T> AgatonSax addAnnotatedRootClass(Class<T> clasz, Consumer<T> whenParsed) {
         XMLElement<T, Void> element = annotationDecorator.createAnnotatedRoot(clasz, whenParsed);
         this.rootElementsByTag.put(element.getTag(), element);
         return this;
     }
-
+    
     public <T> AgatonSax addRootClass(Class<T> clasz, Consumer<T> whenParsed) {
         XMLElement<T, Void> element = annotationDecorator.createRoot(clasz, whenParsed);
         this.rootElementsByTag.put(element.getTag(), element);
@@ -88,7 +91,7 @@ public final class AgatonSax {
     
     public void parseString(String xml) {
         try {
-        SAXParser parser = SAXParserFactory.newDefaultInstance().newSAXParser();
+            SAXParser parser = SAXParserFactory.newDefaultInstance().newSAXParser();
             parser.parse(new ByteArrayInputStream(xml.getBytes()), getHandler());
         } catch (SAXException ex) {
             Logger.getLogger(AgatonSax.class.getName()).log(Level.SEVERE, null, ex);

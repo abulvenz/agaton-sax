@@ -57,16 +57,18 @@ public final class AnnotationCreator {
         mapperCreator.addMapper(clasz, mapper);
     }
 
-    <T> XMLElement<T, Void> createAnnotatedRoot(Class<T> clasz, Consumer<T> whenParsed) {
+    public <T> XMLElement<T, Void> createAnnotatedRoot(Class<T> clasz, Consumer<T> whenParsed) {
         XmlRootElement annotation = clasz.getAnnotation(XmlRootElement.class);
         if (annotation == null) {
             throw new MissingAnnotation("Root must be annotated");
         }
+        trace("createAnnotatedRoot " + clasz.getName());
         return createRoot(clasz, whenParsed);
     }
 
-    <T> XMLElement<T, Void> createRoot(Class<T> clasz, Consumer<T> whenParsed) {
+    public <T> XMLElement<T, Void> createRoot(Class<T> clasz, Consumer<T> whenParsed) {
         String name = determineRootName(clasz);
+        trace("createRoot " + name + " " + clasz.getName());
 
         XMLElement<T, Void> newElement = element(
                 name,
@@ -109,9 +111,43 @@ public final class AnnotationCreator {
         }
     }
 
+    private <C, P> void addFieldElementsAndAttributes(Class<C> clasz, XMLElement<C, P> subElement) throws AssertionError {
+        trace("addFieldElementsAndAttributes(" + clasz.getName() + ") " + subElement);
+        if (terminalClasses.contains(clasz) || clasz.isEnum()) {
+            trace("addFieldElementsAndAttributes.terminal " + (clasz.isEnum() ? "enum" : ""));
+            return;
+        }
+        for (Field nField : Reflection.fieldsBeforeObjectClass(clasz)) {
+            if (nField.isAnnotationPresent(XmlElement.class)
+                    || nField.isAnnotationPresent(XmlElements.class)
+                    || nField.isAnnotationPresent(XmlElementWrapper.class)) {
+                trace("addFieldElementsAndAttributes.element " + nField.getName());
+                reflectOnElement(nField, nField.getType(), subElement);
+            } else if (nField.isAnnotationPresent(XmlAttribute.class)) {
+                Class<?> fieldType = determineFieldType(nField);
+                trace("addFieldElementsAndAttributes.attribute " + nField.getName() + " " + fieldType);
+                assignAttribute(nField, fieldType, subElement);
+            } else {
+                Class<?> fieldType = determineFieldType(nField);
+                trace("addFieldElementsAndAttributes.both " + nField.getName() + " " + fieldType);
+                reflectOnElement(nField, fieldType, subElement);
+                try {
+                    assignAttribute(nField, fieldType, subElement);
+                } catch (AttributeMapperNotFound e) {
+                    /**
+                     * In this case it is a rather complex type.
+                     */
+                    trace("Rather complex type");
+                }
+            }
+        }
+    }
+
     private <T, P, C> void reflectOnElement(Field field, Class<C> clasz, XMLElement<T, P> currentElement) {
+        trace("reflectOnElement " + field.getName() + " " + clasz + " parent " + currentElement);
         if (field.isAnnotationPresent(XmlElementWrapper.class)) {
             String wrapperTag = determineWrapperTag(field);
+            trace("Wrapped by " + wrapperTag);
 
             XMLElement<List, T> wrapperElement = element(wrapperTag, List.class, LinkedList::new, (parent, list) -> safeAssign(parent, list, field));
             currentElement.addElement(wrapperElement);
@@ -123,6 +159,8 @@ public final class AnnotationCreator {
                     : field.isAnnotationPresent(XmlElement.class)
                     ? Arrays.asList(field.getAnnotation(XmlElement.class))
                     : Arrays.asList();
+
+            trace("Wrapped elements " + subElements);
 
             if (subElements.isEmpty()) {
                 Class<?> findGenericType = findGenericType(field);
@@ -138,6 +176,9 @@ public final class AnnotationCreator {
                 for (XmlElement elementAnnotation : subElements) {
                     String tag = determineListElementTag(elementAnnotation, field);
                     Class nClass = elementAnnotation.type();
+                    if (XmlElement.DEFAULT.class.equals(nClass)) {
+                        nClass = findGenericType(field);
+                    }
                     createElement(tag, nClass, wrapperElement, List::add);
                 }
             }
@@ -159,7 +200,19 @@ public final class AnnotationCreator {
     private String determineListElementTag(XmlElement sp, Field field) {
         String tag = sp.name() != null && !DEFAULT_NAME.equals(sp.name())
                 ? sp.name()
-                : "" + field.getName();
+                : null;
+        if (tag == null) {
+            Class<?> fieldType = findGenericType(field);
+            if (fieldType.isAnnotationPresent(XmlType.class)) {
+                XmlType xmlType = fieldType.getAnnotation(XmlType.class);
+                if (xmlType.name() != null && !DEFAULT_NAME.equals(xmlType.name())) {
+                    tag = xmlType.name();
+                }
+            }
+            if (tag == null) {
+                tag = fieldType.getSimpleName();
+            }
+        }
         return tag;
     }
 
@@ -227,32 +280,6 @@ public final class AnnotationCreator {
         return tag;
     }
 
-    private <C, P> void addFieldElementsAndAttributes(Class<C> clasz, XMLElement<C, P> subElement) throws AssertionError {
-        if (terminalClasses.contains(clasz) || clasz.isEnum()) {
-            return;
-        }
-        for (Field nField : Reflection.fieldsBeforeObjectClass(clasz)) {
-            if (nField.isAnnotationPresent(XmlElement.class)
-                    || nField.isAnnotationPresent(XmlElements.class)
-                    || nField.isAnnotationPresent(XmlElementWrapper.class)) {
-                reflectOnElement(nField, nField.getType(), subElement);
-            } else if (nField.isAnnotationPresent(XmlAttribute.class)) {
-                Class<?> fieldType = determineFieldType(nField);
-                assignAttribute(nField, fieldType, subElement);
-            } else {
-                Class<?> fieldType = determineFieldType(nField);
-                reflectOnElement(nField, fieldType, subElement);
-                try {
-                    assignAttribute(nField, fieldType, subElement);
-                } catch (AttributeMapperNotFound e) {
-                    /**
-                     * In this case it is a rather complex type.
-                     */
-                }
-            }
-        }
-    }
-
     private Class<?> determineFieldType(Field nField) throws AssertionError {
         Class<?> fieldType = nField.getType();
         if (fieldType.isPrimitive()) {
@@ -317,6 +344,12 @@ public final class AnnotationCreator {
                 ? attributeAnnotations.name()
                 : field.getName();
         return tag;
+    }
+
+    void trace(String str) {
+        if (DefaultHandlerImplementation.VERBOSE) {
+            System.out.println(str);
+        }
     }
 
 }

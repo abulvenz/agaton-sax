@@ -110,7 +110,11 @@ public class XMLElement<OwnType, ParentType> implements XMLContent<OwnType, Pare
         String str = indent + "<" + tagContent + ">\n";
 
         for (XMLElement sub : subElementsByTag.values()) {
-            str += sub.print(indent + "  ");
+            if (sub == this) {
+                str += indent + "  <" + tag + " ----> selfloop>\n";
+            } else {
+                str += sub.print(indent + "  ");
+            }
         }
         str += indent + "</" + tag + ">\n";
 

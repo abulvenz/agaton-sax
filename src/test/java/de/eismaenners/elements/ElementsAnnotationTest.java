@@ -92,7 +92,7 @@ public class ElementsAnnotationTest {
         RootElementWithXmlAlsoList result = parseAnnotatedElement(RootElementWithXmlAlsoList.class,
                 "  <root>"
                 + "  <elements>"
-//                + "    <r />"
+                //                + "    <r />"
                 + "    <a aWare=\"aa\" />"
                 + "    <b bWare=\"aa\" />"
                 + "  </elements>"
@@ -103,6 +103,66 @@ public class ElementsAnnotationTest {
         assertEquals(2, result.elements.size());
         assertEquals(RootElementWithXmlAlsoList.A.class, result.elements.get(0).getClass());
         assertEquals(RootElementWithXmlAlsoList.B.class, result.elements.get(1).getClass());
+    }
+
+    @XmlRootElement(name = "root")
+    public static class WrappedWithDirectXmlElement {
+
+        @XmlElementWrapper
+        @XmlElement(name = "A", type = A.class)
+        List<A> elements;
+
+        public static class A {
+
+        }
+    }
+
+    @Test
+    public void testMethod() {
+        WrappedWithDirectXmlElement result = parseAnnotatedElement(
+                WrappedWithDirectXmlElement.class,
+                "  <root>"
+                + "  <elements>"
+                + "    <A />"
+                + "    <A />"
+                + "  </elements>"
+                + "</root>"
+        );
+        assertNotNull(result);
+        assertNotNull(result.elements);
+        assertEquals(2, result.elements.size());
+        assertEquals(WrappedWithDirectXmlElement.A.class, result.elements.get(0).getClass());
+        assertEquals(WrappedWithDirectXmlElement.A.class, result.elements.get(1).getClass());
+    }
+
+    @XmlRootElement(name = "root")
+    public static class WrappedWithDirectUnnamedXmlElement {
+
+        @XmlElementWrapper
+        @XmlElement
+        List<A> elements;
+
+        public static class A {
+
+        }
+    }
+
+    @Test
+    public void testUnnamedDirectXmlElementBelowXmlWrapper() {
+        WrappedWithDirectUnnamedXmlElement result = parseAnnotatedElement(
+                WrappedWithDirectUnnamedXmlElement.class,
+                "  <root>"
+                + "  <elements>"
+                + "    <A />"
+                + "    <A />"
+                + "  </elements>"
+                + "</root>"
+        );
+        assertNotNull(result);
+        assertNotNull(result.elements);
+        assertEquals(2, result.elements.size());
+        assertEquals(WrappedWithDirectUnnamedXmlElement.A.class, result.elements.get(0).getClass());
+        assertEquals(WrappedWithDirectUnnamedXmlElement.A.class, result.elements.get(1).getClass());
     }
 
     private <T> T parseAnnotatedElement(Class<T> clasz, String xml) {
