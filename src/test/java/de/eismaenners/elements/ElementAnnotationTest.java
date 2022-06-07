@@ -1,14 +1,15 @@
 package de.eismaenners.elements;
 
 import de.eismaenners.agatonsax.AgatonSax;
+import de.eismaenners.agatonsax.exceptions.UnexpectedAttribute;
+import de.eismaenners.agatonsax.exceptions.UnexpectedElement;
 import de.eismaenners.agatonsax.exceptions.WrongEnumType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlEnum;
 import jakarta.xml.bind.annotation.XmlEnumValue;
 import jakarta.xml.bind.annotation.XmlRootElement;
-import static junit.framework.Assert.assertEquals;
-import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 
@@ -41,7 +42,7 @@ public class ElementAnnotationTest {
         );
         assertNotNull(object);
     }
-
+    
     @XmlRootElement(name = "root")
     public static class RootElementWithAttributes {
 
@@ -107,6 +108,14 @@ public class ElementAnnotationTest {
         assertEquals(AnnotatedEnum.T1, object.type);
     }
 
+    @Test(expected = UnexpectedAttribute.class)
+    public void testUnexpectedAttribute() {
+        parseAnnotatedElement(
+                RootElementWithAttributes.class,
+                "<root not-present=\"this is\" />"
+        );
+    }
+    
     @Test(expected = WrongEnumType.class)
     public void testWrongEnumAttribute() {
         parseAnnotatedElement(
@@ -211,18 +220,61 @@ public class ElementAnnotationTest {
         assertEquals(Integer.valueOf(3), object.integer);
     }
 
-        @Test
+    @Test
     public void testEnumElement() {
         RootWithElements object = parseAnnotatedElement(
                 RootWithElements.class,
                 "  <root>"
-                + "  <type>3</type>"
+                + "  <type>T1</type>"
                 + "</root>"
         );
         assertNotNull(object);
-        assertEquals(Integer.valueOf(3), object.integer);
+        assertEquals(AnnotatedEnum.T1, object.type);
     }
 
+    @Test(expected = WrongEnumType.class)
+    public void testWrongEnumElement() {
+        parseAnnotatedElement(
+                RootWithElements.class,
+                "  <root>"
+                + "  <type>T3</type>"
+                + "</root>"
+        );
+    }
+
+    @Test(expected = UnexpectedElement.class)
+    public void testUnexpectedElement() {
+        parseAnnotatedElement(
+                RootWithElements.class,
+                "  <root>"
+                + "  <unknown></unknown>"
+                + "</root>"
+        );        
+    }
+    
+    @XmlRootElement(name = "root")
+    public static class RootWithNestedElements {
+        public static class Nested {
+            @XmlElement(name = "further")
+            Nested nested;
+        }
+        @XmlElement(name = "onroot")
+        Nested nested;
+    }
+    
+    @Test
+    public void testNestedElements() {
+        RootWithNestedElements object = parseAnnotatedElement(
+                RootWithNestedElements.class,
+                "  <root>"
+                + "  <type>T1</type>"
+                + "</root>"
+        );
+        assertNotNull(object);
+        assertNotNull(object.nested);
+        assertNotNull(object.nested.nested);
+    }
+    
     private <T> T parseAnnotatedElement(Class<T> clasz, String xml) {
         MutableObject<T> result = new MutableObject<>();
         AgatonSax.create()
