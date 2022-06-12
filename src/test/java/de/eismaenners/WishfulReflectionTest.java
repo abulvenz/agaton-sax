@@ -30,7 +30,11 @@ public class WishfulReflectionTest {
         @XmlElementWrapper(name = "properties")
         @XmlElement(name = "property")
         List<Property> properties;
-
+        
+        @XmlElementWrapper(name = "additional-properties")
+        @XmlElement(name = "property")
+        List<Property> additionalProperties;
+        
         public File() {
         }
 
@@ -144,6 +148,9 @@ public class WishfulReflectionTest {
             + "  <properties>"
             + "    <property key=\"owner\" value=\"root\"></property>"
             + "  </properties>"
+            + "  <additional-properties>"
+            + "    <property key=\"owner\" value=\"root\"></property>"
+            + "  </additional-properties>"
             + "</file>";
 
     @Test
@@ -152,7 +159,7 @@ public class WishfulReflectionTest {
         DefaultHandler handler
                 = AgatonSax.create()
                         .addRootClass(File.class, files::add)
-                        .addInterceptor("/file/properties/property", File.Property.class, property -> System.out.println(property.toString()))
+                        .addInterceptor("/file/additional-properties/property", File.Property.class, property -> System.out.println(property.toString()))
                         .getHandler();
 
         SAXParserFactory
